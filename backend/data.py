@@ -1,17 +1,7 @@
-cd backend
-cd backend
-pip install -r requirements.txt
-
-
-
-cd /workspaces/Cric-IQ-/backend && pip install -r requirements.txt
-
-
-
-export GEMINI_API_KEY=AIzaSyD37xBj4MyVbuJZVBoAKpykofIjpBP5TZE
-export GEMINI_API_KEY=AIzaSyD37xBj4MyVbuJZVBoAKpykofIjpBP5TZE
-cd /workspaces/Cric-IQ-/backend && uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-  "id": "p001",
+# Cricket knowledge base for RAG system
+CRICKET_KNOWLEDGE = [
+    {
+        "id": "p001",
         "text": "Virat Kohli is one of the greatest batsmen of all time. He plays for India and Royal Challengers Bangalore (RCB) in IPL. Known for his aggressive batting style, exceptional fitness, and ability to chase targets. Test average: 48+, ODI average: 58+, T20I average: 52+. Best against spin bowling. Weakness: Early in innings against swinging deliveries outside off stump.",
         "category": "player",
         "title": "Virat Kohli"
@@ -167,5 +157,149 @@ cd /workspaces/Cric-IQ-/backend && uvicorn main:app --host 0.0.0.0 --port 8000 -
         "text": "IPL records: Most runs in IPL history - Virat Kohli with 7000+ runs. Most centuries in IPL - Chris Gayle with 6 hundreds. Fastest century in IPL - Chris Gayle in 30 balls. Most wickets in IPL - Dwayne Bravo with 180+ wickets. Highest team total in IPL - Royal Challengers Bangalore scored 263/5 vs Pune Warriors in 2013.",
         "category": "record",
         "title": "IPL Records"
+    },
+    {
+        "id": "r004",
+        "text": "Most IPL trophies by player: Rohit Sharma and Ambati Rayudu hold the record with 6 IPL titles each. Rohit won with Deccan Chargers (2009) and Mumbai Indians (2013, 2015, 2017, 2019, 2020). MS Dhoni has won 5 IPL titles as captain of Chennai Super Kings (2010, 2011, 2018, 2021, 2023). Hardik Pandya, Kieron Pollard and Jasprit Bumrah have 5 titles with Mumbai Indians.",
+        "category": "record",
+        "title": "Most IPL Trophies by Player"
+    },
+    {
+        "id": "r005",
+        "text": "Most IPL titles by team: Mumbai Indians are the most successful IPL team with 5 titles (2013, 2015, 2017, 2019, 2020). Chennai Super Kings have won 5 titles (2010, 2011, 2018, 2021, 2023). Kolkata Knight Riders have 3 titles (2012, 2014, 2024). Rajasthan Royals won in 2008 and 2024. Sunrisers Hyderabad won in 2016. Gujarat Titans won in 2022.",
+        "category": "record",
+        "title": "IPL Team Titles"
+    },
+    {
+        "id": "r006", 
+        "text": "Sachin Tendulkar holds the record for most international centuries with 100 hundreds. Most Test centuries: Sachin Tendulkar 51, Jacques Kallis 45, Ricky Ponting 41. Most ODI centuries: Sachin Tendulkar 49, Virat Kohli 46, Rohit Sharma 31. Fastest ODI century: AB de Villiers in 31 balls. Fastest Test century: Misbah-ul-Haq and Viv Richards in 56 balls.",
+        "category": "record",
+        "title": "Century Records"
+    },
+    {
+        "id": "st005",
+        "text": "Best batting strategy in T20 cricket: In powerplay (overs 1-6) play aggressively targeting boundaries. In middle overs (7-15) rotate strike and hit loose balls. In death overs (16-20) target yorker length and go for maximum hitting. Best shots in T20: ramp shot, scoop, switch hit, reverse sweep. Key: pick gaps in field and run hard between wickets.",
+        "category": "strategy",
+        "title": "T20 Batting Strategy"
+    },
+    {
+        "id": "r007",
+        "text": "Most IPL trophies by player: Rohit Sharma holds the record for most IPL titles as captain with 5 titles leading Mumbai Indians (2013, 2015, 2017, 2019, 2020). Ambati Rayudu has won 6 IPL trophies total as a player. MS Dhoni has won 5 IPL titles as CSK captain. Kieron Pollard won 5 titles with Mumbai Indians. Rohit Sharma and Ambati Rayudu are the players with most IPL trophies at 6 each.",
+        "category": "record",
+        "title": "Most IPL Trophies Player Record"
+    },
+    {
+        "id": "p011",
+        "text": "Suryakumar Yadav is India's top T20 batter ranked number 1 in ICC T20I rankings. Known as SKY, he plays 360 degree cricket hitting all around the ground. Famous for his scoop shots, ramp shots and upper cuts. T20I average above 45 with strike rate of 170+. Plays for Mumbai Indians in IPL. Key player in India's 2024 T20 World Cup win.",
+        "category": "player",
+        "title": "Suryakumar Yadav"
+    },
+    {
+        "id": "p012",
+        "text": "Yashasvi Jaiswal is India's young opening batsman. Left-handed batsman known for aggressive stroke play and solid technique. Scored 700+ runs in 2024 IPL season for Rajasthan Royals. Made brilliant Test debut scoring centuries against England. Under 23 years old and already one of India's best batsmen. Known for his pull shot and cover drive.",
+        "category": "player",
+        "title": "Yashasvi Jaiswal"
+    },
+    {
+        "id": "p013",
+        "text": "Shubman Gill is India's top order batsman and future captain candidate. Right-handed elegant batsman known for his timing and placement. Has scored multiple ODI centuries. Plays for Gujarat Titans as captain in IPL. Known for his straight drives and on-side play. Consistent performer across all formats for India.",
+        "category": "player",
+        "title": "Shubman Gill"
+    },
+    {
+        "id": "t006",
+        "text": "Gujarat Titans won the IPL title in 2022 in their debut season under Hardik Pandya and again in 2023 under Shubman Gill. Known for their team balance and disciplined cricket. Key players: Shubman Gill, Mohammed Shami, Rashid Khan. Home ground: Narendra Modi Stadium, Ahmedabad - the largest cricket stadium in the world with capacity of 132000.",
+        "category": "team",
+        "title": "Gujarat Titans"
+    },
+    {
+        "id": "t007",
+        "text": "Sunrisers Hyderabad won IPL title in 2016 under David Warner. Known for their strong bowling attack. Key players: Pat Cummins (captain), Travis Head, Heinrich Klaasen. Home ground: Rajiv Gandhi International Cricket Stadium, Hyderabad. Set the record for highest IPL team total of 287 runs in 2024 season.",
+        "category": "team",
+        "title": "Sunrisers Hyderabad"
+    },
+    {
+        "id": "w004",
+        "text": "India won the 2013 ICC Champions Trophy under MS Dhoni defeating England in the final at Edgbaston. Ravindra Jadeja was Player of the Tournament. India also won the 2007 ICC World T20 under MS Dhoni defeating Pakistan in the final. Yuvraj Singh hit 6 sixes in an over against Stuart Broad in 2007 World T20.",
+        "category": "worldcup",
+        "title": "India World Titles"
+    },
+    {
+        "id": "w005",
+        "text": "ICC Test World Championship: Australia won the 2023 WTC Final against India at The Oval. Australia won the 2021 WTC Final against New Zealand. India lost both WTC Finals in 2021 and 2023. The WTC cycle runs over 2 years with points earned from Test series. Top 2 teams qualify for the final.",
+        "category": "worldcup",
+        "title": "ICC World Test Championship"
+    },
+    {
+        "id": "st006",
+        "text": "How to play swing bowling: Watch the shiny side of the ball carefully. Play late and close to the body. Keep the bat close to the pad to avoid edges. For inswing, play with bat coming from outside the line. For outswing, play inside the line. Move feet decisively - either fully forward or back. Do not fish at deliveries outside off stump early in innings.",
+        "category": "strategy",
+        "title": "Playing Swing Bowling"
+    },
+    {
+        "id": "st007",
+        "text": "Best fielding positions and strategies: Place slip cordon of 2-3 slips for new ball in Test cricket. Use attacking fields with mid-on and mid-off up for spinners. Set defensive fields in T20 death overs with boundary riders. Best fielding positions for pace: slip, gully, point. For spin: slip, silly point, short leg, mid-wicket. Always have a fine leg and third man in limited overs cricket.",
+        "category": "strategy",
+        "title": "Fielding Strategies"
+    },
+    {
+        "id": "r008",
+        "text": "Most runs in a single IPL season: Virat Kohli scored 973 runs in IPL 2016 for RCB - the highest ever in a single IPL season. Jos Buttler scored 863 runs in IPL 2022 for Rajasthan Royals. Most sixes in IPL career: Chris Gayle with 357 sixes. Most fours in IPL career: Shikhar Dhawan. Highest strike rate in IPL (minimum 500 runs): Andre Russell.",
+        "category": "record",
+        "title": "IPL Batting Records"
+    },
+    {
+        "id": "r009",
+        "text": "Most wickets in a single IPL season: Harshal Patel took 32 wickets in IPL 2021 for RCB - the record for most wickets in one season. Most expensive bowler in IPL: multiple bowlers have gone for 6+ runs per over. Best bowling figures in IPL: Alzarri Joseph took 6 wickets for 12 runs in his IPL debut for Mumbai Indians in 2019.",
+        "category": "record",
+        "title": "IPL Bowling Records"
+    },
+    {
+        "id": "r010",
+        "text": "Most ICC trophies by player: MS Dhoni holds the record for most ICC trophies as captain with 3 titles - 2007 T20 World Cup, 2011 ODI World Cup, and 2013 Champions Trophy. MS Dhoni is the only captain in cricket history to win all 3 major ICC trophies. Ricky Ponting won 2 ODI World Cups as Australia captain (2003, 2007). Clive Lloyd won 2 ODI World Cups as West Indies captain (1975, 1979). Among current players, Rohit Sharma won the 2024 T20 World Cup as captain and was part of 2011 and 2013 winning squads. Virat Kohli has won 2013 Champions Trophy and 2024 T20 World Cup. MS Dhoni is universally regarded as the greatest ICC trophy winning captain ever.",
+        "category": "record",
+        "title": "Most ICC Trophies by Player"
+    },
+    {
+        "id": "r011",
+        "text": "Most ICC trophies by team: Australia has won the most ICC trophies overall with 7 ODI World Cups (1987, 1999, 2003, 2007, 2015, 2023), 1 T20 World Cup (2021), and 2 Champions Trophies. India has won 2 ODI World Cups (1983, 2011), 2 T20 World Cups (2007, 2024), and 2 Champions Trophies (2002, 2013). West Indies won 2 ODI World Cups (1975, 1979) and 2 T20 World Cups (2012, 2016). Pakistan won 1 ODI World Cup (1992) and 1 Champions Trophy (2017).",
+        "category": "record",
+        "title": "Most ICC Trophies by Team"
+    },
+    {
+        "id": "t20wc001",
+        "text": "2024 T20 World Cup Results: India won the 2024 T20 World Cup defeating South Africa in the final. India and South Africa both won 8 matches in the tournament - the most wins. Afghanistan won 6 matches showing impressive performance. India beat England in the semifinal and South Africa in the final. Rohit Sharma led India to their second T20 World Cup title.",
+        "category": "worldcup",
+        "title": "2024 T20 World Cup Results"
+    },
+    {
+        "id": "t20wc002",
+        "text": "2024 T20 World Cup Best Bowlers: Fazalhaq Farooqi of Afghanistan was the best bowler winning Player of Match 3 times. Jasprit Bumrah won Player of Match twice and was India's best bowler. Rashid Khan took wickets in 3 matches for Afghanistan. Adil Rashid was England's best bowler. Arshdeep Singh was crucial for India taking key wickets throughout tournament.",
+        "category": "record",
+        "title": "2024 T20 World Cup Best Bowlers"
+    },
+    {
+        "id": "t20wc003",
+        "text": "2024 T20 World Cup Final: India defeated South Africa in a thrilling final. Virat Kohli scored 76 runs in the final - a match winning knock. Hardik Pandya bowled the last over to defend the total. India won their second T20 World Cup title. The final was played in Barbados. Jasprit Bumrah was Player of the Tournament with 15 wickets.",
+        "category": "worldcup",
+        "title": "2024 T20 World Cup Final"
+    },
+    {
+        "id": "t20wc004",
+        "text": "2024 T20 World Cup Semifinals: India beat England in the first semifinal. South Africa beat Afghanistan in the second semifinal - Afghanistan's first ever T20 World Cup semifinal. Marcus Stoinis played key role for Australia in the tournament. Adam Zampa was Australia's best bowler. West Indies co-hosted the tournament along with USA.",
+        "category": "worldcup",
+        "title": "2024 T20 World Cup Semifinals"
+    },
+    {
+        "id": "t20wc005",
+        "text": "2024 T20 World Cup hosted in West Indies and USA. First time cricket World Cup held in USA. Matches played at Nassau County International Cricket Stadium New York, Grand Prairie Stadium Dallas, and traditional West Indies venues like Kensington Oval Barbados and Providence Stadium Guyana. USA beat Pakistan in a historic upset in group stage.",
+        "category": "worldcup",
+        "title": "2024 T20 World Cup Venues"
+    },
+    {
+        "id": "t20wc006",
+        "text": "Jasprit Bumrah 2024 T20 World Cup: Bumrah was the Player of the Tournament in 2024 T20 World Cup with 15 wickets. Won Player of Match award twice. Bowled brilliantly throughout the tournament with economy rate below 4. His yorkers and slower balls were unplayable. Considered the best bowler in the world after his World Cup performance.",
+        "category": "player",
+        "title": "Bumrah T20 World Cup 2024"
     },
 ]

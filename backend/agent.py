@@ -1,262 +1,244 @@
-# agent.py - Agentic AI Brain using Google Gemini (Free Tier)
-# The agent reads the user query, decides which tool to use,
-# searches Endee via RAG, and generates an answer using Gemini AI
+# agent.py - Simplified Cricket AI Agent with Groq Integration
+# Synchronous version using requests library
+# Fallback to direct cricket knowledge base search if Groq fails
 
 import os
-import httpx
 import json
-from rag import semantic_search
+import requests
+from dotenv import load_dotenv
+from data import CRICKET_KNOWLEDGE
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+# Load environment variables from .env file
+load_dotenv()
 
-# ── Tool Definitions ──────────────────────────────────────────────────────────
-# These are the tools the agent can choose from autonomously
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-TOOLS = [
-    {
-        "name": "search_player",
-        "description": "Search for information about a specific cricket player - their stats, batting/bowling style, strengths, weaknesses, records, and career details.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "The player-related search query"}
-            },
-            "required": ["query"]
-        }
-    },
-    {
-        "name": "search_team",
-        "description": "Search for information about cricket teams - IPL teams, national teams, their records, key players, home grounds, and titles won.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "The team-related search query"}
-            },
-            "required": ["query"]
-        }
-    },
-    {
-        "name": "search_worldcup",
-        "description": "Search for World Cup history, results, records, and tournament information.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "The World Cup related search query"}
-            },
-            "required": ["query"]
-        }
-    },
-    {
-        "name": "search_strategy",
-        "description": "Search for cricket strategies, tactics, batting techniques, bowling plans, and game plans.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "The strategy-related search query"}
-            },
-            "required": ["query"]
-        }
-    },
-    {
-        "name": "search_records",
-        "description": "Search for cricket records - highest scores, most wickets, fastest centuries, IPL records, and other statistical achievements.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "The records-related search query"}
-            },
-            "required": ["query"]
-        }
-    },
-    {
-        "name": "compare_players",
-        "description": "Compare two or more cricket players based on their stats, styles, and achievements.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "The comparison query mentioning the players to compare"}
-            },
-            "required": ["query"]
-        }
-    }
-]
+print(f"[Agent] GROQ_API_KEY loaded: {bool(GROQ_API_KEY)}")
+print(f"[Agent] Cricket Knowledge Base loaded: {len(CRICKET_KNOWLEDGE)} documents")
 
-# ── Tool Execution ────────────────────────────────────────────────────────────
-async def execute_tool(tool_name: str, tool_input: dict) -> str:
-    """Execute the tool chosen by the agent and return results from Endee."""
-    query = tool_input.get("query", "")
+# ── Simple Tool Selection (Keyword Matching) ──────────────────────────────────
+def select_tool(query: str) -> str:
+    """Select appropriate tool based on simple keyword matching."""
+    query_lower = query.lower()
+    
+    if any(word in query_lower for word in ["compare", "vs", "versus", "difference"]):
+        return "compare_players"
+    elif any(word in query_lower for word in ["player", "batsman", "bowler", "cricketer"]):
+        return "search_player"
+    elif any(word in query_lower for word in ["team", "ipl", "india", "england", "australia", "pakistan"]):
+        return "search_team"
+    elif any(word in query_lower for word in ["world cup", "worldcup", "tournament"]):
+        return "search_worldcup"
+    elif any(word in query_lower for word in ["strategy", "tactic", "batting", "bowling", "technique"]):
+        return "search_strategy"
+    elif any(word in query_lower for word in ["record", "highest", "most", "statistic", "average"]):
+        return "search_records"
+    else:
+        return "search_player"  # Default
 
-    category_map = {
-        "search_player":   "player",
-        "search_team":     "team",
-        "search_worldcup": "worldcup",
-        "search_strategy": "strategy",
-        "search_records":  "record",
-        "compare_players": None  # No filter - search across all categories
-    }
-
-    category = category_map.get(tool_name)
-    top_k = 5 if tool_name == "compare_players" else 3
-
-    chunks = await semantic_search(query, category=category, top_k=top_k)
-
-    if not chunks:
-        return "No relevant cricket information found for this query."
-
-    # Format chunks as context string
-    context = ""
-    for i, chunk in enumerate(chunks, 1):
-        context += f"\n[Source {i}: {chunk['title']}]\n{chunk['text']}\n"
-
-    return context
-
-# ── Main Agent ────────────────────────────────────────────────────────────────
-async def run_agent(user_query: str) -> dict:
+# ── Direct Search from Cricket Knowledge Base ─────────────────────────────────
+def search_cricket_knowledge(query: str, category: str = None, top_k: int = 3) -> list:
     """
-    Agentic pipeline using Google Gemini:
-    1. Analyze user query to determine which tool to use
-    2. Execute tool (semantic search in Endee)
-    3. Use Gemini to generate a grounded answer based on search results
+    Direct search through CRICKET_KNOWLEDGE using keyword matching.
+    Returns top_k matches based on keyword overlap.
     """
+    query_lower = query.lower()
+    query_words = set(query_lower.split())
+    
+    scored_results = []
+    
+    for doc in CRICKET_KNOWLEDGE:
+        # Filter by category if provided
+        if category and doc.get("category") != category:
+            continue
+        
+        text_lower = doc.get("text", "").lower()
+        title_lower = doc.get("title", "").lower()
+        
+        # Calculate match score
+        text_words = set(text_lower.split())
+        title_words = set(title_lower.split())
+        
+        text_matches = len(query_words & text_words)
+        title_matches = len(query_words & title_words) * 2  # Title matches weighted higher
+        
+        total_score = text_matches + title_matches
+        
+        if total_score > 0:
+            scored_results.append({
+                "title": doc.get("title", ""),
+                "text": doc.get("text", ""),
+                "category": doc.get("category", ""),
+                "score": total_score
+            })
+    
+    # Sort by score and return top_k
+    scored_results.sort(key=lambda x: x["score"], reverse=True)
+    return scored_results[:top_k]
 
-    if not GEMINI_API_KEY:
+# ── Fallback Answer Generator ─────────────────────────────────────────────────
+def generate_fallback_answer(search_results: list, query: str) -> dict:
+    """Generate answer directly from search results when Gemini fails."""
+    if not search_results:
         return {
-            "answer": "Please set your GEMINI_API_KEY environment variable to use CricketIQ.",
-            "tool_used": "none",
+            "answer": f"I searched our cricket knowledge base for '{query}' but didn't find specific information. Try asking about players, teams, IPL, World Cup records, or cricket strategies!",
+            "tool_used": "direct_search",
             "sources": []
         }
-
-    # Step 1: Analyze query and select appropriate tool
-    tool_description = """
-    You must respond with ONLY a JSON object (no markdown, no explanation) with this exact structure:
-    {"tool": "tool_name", "query": "refined_search_query"}
     
-    Choose ONE of these tools based on the user query:
-    - search_player: For questions about cricket players
-    - search_team: For questions about teams (IPL, national, etc.)
-    - search_worldcup: For World Cup history and records
-    - search_strategy: For cricket tactics and strategies
-    - search_records: For cricket statistics and records
-    - compare_players: For comparing multiple players
+    answer_text = f"Based on our cricket knowledge base, here's what I found about '{query}':\n\n"
+    sources = []
     
-    User query: {query}
-    """
-
-    system_prompt = """You are CricketIQ, an expert AI cricket analyst and strategist. 
-You have deep knowledge of cricket players, teams, strategies, records, and tournaments.
-You use tools to search a cricket knowledge database and provide accurate, insightful answers.
-Always be enthusiastic about cricket. Use cricket terminology naturally.
-Keep answers concise but informative. Always cite sources clearly."""
-
-    # Tool selection prompt
-    headers = {"Content-Type": "application/json"}
-    tool_selection_payload = {
-        "contents": [{
-            "role": "user",
-            "parts": [{"text": tool_description.format(query=user_query)}]
-        }],
-        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 200}
+    for i, result in enumerate(search_results, 1):
+        answer_text += f"✓ {result['title']}\n"
+        answer_text += f"  {result['text'][:300]}{'...' if len(result['text']) > 300 else ''}\n\n"
+        if result['title'] not in sources:
+            sources.append(result['title'])
+    
+    return {
+        "answer": answer_text,
+        "tool_used": "direct_search",
+        "sources": sources[:3]
     }
 
-    tool_used = "general"
-    context = ""
-    sources = []
-
+# ── Call Groq API Synchronously ──────────────────────────────────────────────
+def call_groq(prompt: str) -> str:
+    """Call Groq API synchronously and return generated text."""
+    if not GROQ_API_KEY:
+        print("[Agent] ERROR: GROQ_API_KEY not set!")
+        return None
+    
     try:
-        async with httpx.AsyncClient() as client:
-            tool_response = await client.post(
-                f"{GEMINI_URL}?key={GEMINI_API_KEY}",
-                headers=headers,
-                json=tool_selection_payload,
-                timeout=30
-            )
-            tool_response.raise_for_status()
-            tool_result = tool_response.json()
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {GROQ_API_KEY}"
+        }
+        
+        payload = {
+            "model": "llama3-8b-8192",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are CricketIQ, an expert AI cricket analyst and strategist. You have deep knowledge of cricket players, teams, strategies, records, and tournaments. Always be enthusiastic about cricket. Use cricket terminology naturally. Keep answers concise but informative. Always cite sources clearly."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "max_tokens": 800,
+            "temperature": 0.7
+        }
+        
+        print(f"[Agent] Calling Groq API...")
+        response = requests.post(
+            GROQ_URL,
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+        
+        print(f"[Agent] Groq response status: {response.status_code}")
+        
+        if response.status_code != 200:
+            print(f"[Agent] ERROR: Groq API returned {response.status_code}")
+            print(f"[Agent] Response: {response.text[:500]}")
+            return None
+        
+        result = response.json()
+        
+        # Extract answer from response (OpenAI compatible format)
+        if "choices" in result and len(result["choices"]) > 0:
+            message = result["choices"][0].get("message", {})
+            text = message.get("content", "")
+            if text:
+                print(f"[Agent] Groq answered successfully ({len(text)} chars)")
+                return text
+        
+        print("[Agent] ERROR: No choices in Groq response")
+        return None
+        
+    except requests.exceptions.Timeout:
+        print("[Agent] ERROR: Groq API call timed out")
+        return None
+    except requests.exceptions.RequestException as e:
+        print(f"[Agent] ERROR: Groq API request failed: {str(e)}")
+        return None
+    except Exception as e:
+        print(f"[Agent] ERROR: Unexpected error calling Groq: {str(e)}")
+        return None
 
-        # Extract tool selection
-        tool_text = ""
-        if "candidates" in tool_result and len(tool_result["candidates"]) > 0:
-            for part in tool_result["candidates"][0].get("content", {}).get("parts", []):
-                tool_text += part.get("text", "")
-
-        # Parse tool selection (try to extract JSON)
-        try:
-            tool_json = json.loads(tool_text)
-            tool_used = tool_json.get("tool", "general")
-            search_query = tool_json.get("query", user_query)
-        except (json.JSONDecodeError, TypeError):
-            # Fallback: try to find tool name in response
-            tool_text_lower = tool_text.lower()
-            if "search_player" in tool_text_lower:
-                tool_used = "search_player"
-            elif "search_team" in tool_text_lower:
-                tool_used = "search_team"
-            elif "search_worldcup" in tool_text_lower:
-                tool_used = "search_worldcup"
-            elif "search_strategy" in tool_text_lower:
-                tool_used = "search_strategy"
-            elif "search_records" in tool_text_lower:
-                tool_used = "search_records"
-            elif "compare_players" in tool_text_lower:
-                tool_used = "compare_players"
-            search_query = user_query
-
-        # Step 2: Execute tool (search Endee)
-        if tool_used in [t["name"] for t in TOOLS]:
-            context = await execute_tool(tool_used, {"query": search_query})
-
-            # Extract sources
-            for chunk in context.split("[Source"):
-                if chunk.strip():
-                    title_end = chunk.find("]")
-                    if title_end > 0:
-                        title = chunk[chunk.find(":")+1:title_end].strip()
-                        if title and title not in sources:
-                            sources.append(title)
-
-        # Step 3: Generate answer using Gemini with context
-        answer_prompt = f"""Based on this cricket information, answer the user's question concisely and accurately.
+# ── Main Agent Function ───────────────────────────────────────────────────────
+def run_agent(user_query: str) -> dict:
+    """
+    Main agent function that:
+    1. Selects appropriate tool/category
+    2. Searches cricket knowledge base
+    3. Tries to use Gemini to generate answer
+    4. Falls back to direct search results if Gemini fails
+    """
+    print(f"\n[Agent] Processing query: '{user_query}'")
+    
+    # Step 1: Select tool
+    tool = select_tool(user_query)
+    print(f"[Agent] Selected tool: {tool}")
+    
+    # Map tool to category
+    category_map = {
+        "search_player": "player",
+        "search_team": "team",
+        "search_worldcup": "worldcup",
+        "search_strategy": "strategy",
+        "search_records": "record",
+        "compare_players": None
+    }
+    
+    category = category_map.get(tool)
+    top_k = 5 if tool == "compare_players" else 3
+    
+    # Step 2: Search cricket knowledge base directly
+    print(f"[Agent] Searching cricket knowledge base (category={category}, top_k={top_k})...")
+    search_results = search_cricket_knowledge(user_query, category=category, top_k=top_k)
+    print(f"[Agent] Found {len(search_results)} results")
+    
+    # Extract sources
+    sources = [r["title"] for r in search_results]
+    
+    # Step 3: Try to use Groq for better answer
+    if GROQ_API_KEY and search_results:
+        # Format search results as context
+        context = "\n".join([
+            f"• {r['title']}: {r['text'][:200]}..."
+            for r in search_results
+        ])
+        
+        groq_prompt = f"""Answer this question based ONLY on the cricket information provided:
 
 Cricket Information:
-{context if context else "No specific information found. Provide a general answer based on cricket knowledge."}
+{context}
 
 User Question: {user_query}
 
-Provide a helpful, enthusiastic cricket answer. Cite the sources provided above."""
-
-        answer_payload = {
-            "contents": [{
-                "role": "user",
-                "parts": [{"text": answer_prompt}]
-            }],
-            "generationConfig": {"temperature": 0.7, "maxOutputTokens": 500}
-        }
-
-        async with httpx.AsyncClient() as client:
-            answer_response = await client.post(
-                f"{GEMINI_URL}?key={GEMINI_API_KEY}",
-                headers=headers,
-                json=answer_payload,
-                timeout=30
-            )
-            answer_response.raise_for_status()
-            answer_result = answer_response.json()
-
-        answer = ""
-        if "candidates" in answer_result and len(answer_result["candidates"]) > 0:
-            for part in answer_result["candidates"][0].get("content", {}).get("parts", []):
-                answer += part.get("text", "")
-
-        return {
-            "answer": answer or "I couldn't generate an answer. Please try rephrasing your question.",
-            "tool_used": tool_used,
-            "sources": sources[:3]
-        }
-
-    except Exception as e:
-        return {
-            "answer": f"Error processing query: {str(e)}",
-            "tool_used": "error",
-            "sources": []
-        }
+Provide a concise, helpful answer citing the sources. Be enthusiastic about cricket!"""
+        
+        groq_answer = call_groq(groq_prompt)
+        
+        if groq_answer and groq_answer.strip():
+            print(f"[Agent] Successfully generated Groq answer")
+            return {
+                "answer": groq_answer,
+                "tool_used": tool,
+                "sources": sources[:3]
+            }
+        else:
+            print(f"[Agent] Groq returned empty result, using fallback")
+    else:
+        if not GROQ_API_KEY:
+            print("[Agent] No API key, using fallback")
+        elif not search_results:
+            print("[Agent] No search results, using fallback")
+    
+    # Step 4: Fallback to direct search results
+    print(f"[Agent] Returning fallback answer from direct search")
+    return generate_fallback_answer(search_results, user_query)

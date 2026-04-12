@@ -7,6 +7,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from rag import ingest_knowledge
 from agent import run_agent
@@ -42,14 +46,16 @@ async def init_database():
 async def ask(request: AskRequest):
     """
     Main agentic endpoint.
-    Agent autonomously picks the right tool, searches Endee, and returns an answer.
+    Agent searches cricket knowledge base and returns an answer.
+    Falls back to direct search if Gemini API fails.
     """
     if not request.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     try:
-        result = await run_agent(request.query)
+        result = run_agent(request.query)
         return result
     except Exception as e:
+        print(f"[Main] Error in /ask endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # ── Serve Frontend ────────────────────────────────────────────────────────────
