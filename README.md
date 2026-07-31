@@ -175,7 +175,7 @@ curl -X POST http://localhost:8000/ask \
   -d '{"query": "Who is the best T20 bowler in India?"}'
 ```
 
-### Example Response
+### Example Response:
 ```json
 {
   "answer": "Jasprit Bumrah is widely regarded as India's best T20 bowler...",
