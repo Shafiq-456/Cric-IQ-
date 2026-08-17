@@ -12,7 +12,7 @@
 
 ## 🎯 What is CricIQ?
 
-CricketIQ is an intelligent cricket assistant that lets you ask any cricket question in plain English and get smart, data-grounded answers instantly.
+CricIQ is an intelligent cricket assistant that lets you ask any cricket question in plain English and get smart, data-grounded answers instantly.
 
 **Ask anything like:**
 - *"Who is the best batsman against fast bowlers?"*
